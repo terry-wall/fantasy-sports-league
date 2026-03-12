@@ -15,7 +15,7 @@ COPY package-lock.json* ./
 
 # Clean npm cache and install dependencies
 RUN npm cache clean --force
-RUN npm install --omit=dev --no-package-lock
+RUN npm install --legacy-peer-deps
 
 # Copy source code
 COPY . .
