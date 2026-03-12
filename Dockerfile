@@ -5,22 +5,15 @@ ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
 
 # Install system dependencies
-RUN apk add --no-cache libc6-compat python3 make g++
+RUN apk add --no-cache libc6-compat
 
 WORKDIR /app
-
-# Clean npm cache and set registry
-RUN npm config set registry https://registry.npmjs.org/
-RUN npm cache clean --force
 
 # Copy package files
 COPY package.json ./
 
-# Remove any existing lockfiles
-RUN rm -f package-lock.json npm-shrinkwrap.json yarn.lock pnpm-lock.yaml
-
-# Install dependencies with clean state
-RUN npm install --no-package-lock --legacy-peer-deps
+# Install dependencies
+RUN npm install --production=false
 
 # Copy source code
 COPY . .
