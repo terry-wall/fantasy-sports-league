@@ -9,16 +9,15 @@ RUN apk add --no-cache libc6-compat python3 make g++
 
 WORKDIR /app
 
+# Clean npm cache and set registry
+RUN npm config set registry https://registry.npmjs.org/
+RUN npm cache clean --force
+
 # Copy package files
 COPY package.json ./
 
-# Clean npm cache and remove any existing lockfiles
-RUN rm -f package-lock.json yarn.lock pnpm-lock.yaml
-RUN npm cache clean --force
-
-# Set npm registry and install with verbose logging
-RUN npm config set registry https://registry.npmjs.org/
-RUN npm install --verbose --legacy-peer-deps
+# Install dependencies with exact versions
+RUN npm install --no-package-lock --prefer-offline
 
 # Copy source code
 COPY . .
