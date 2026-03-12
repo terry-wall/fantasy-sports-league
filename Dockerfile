@@ -16,8 +16,11 @@ RUN npm cache clean --force
 # Copy package files
 COPY package.json ./
 
-# Install dependencies with exact versions
-RUN npm install --no-package-lock --prefer-offline
+# Remove any existing lockfiles
+RUN rm -f package-lock.json npm-shrinkwrap.json yarn.lock pnpm-lock.yaml
+
+# Install dependencies with clean state
+RUN npm install --no-package-lock --legacy-peer-deps
 
 # Copy source code
 COPY . .
