@@ -10,19 +10,18 @@ RUN apk add --no-cache libc6-compat python3 make g++
 WORKDIR /app
 
 # Copy package files
-COPY package.json package-lock.json* ./
+COPY package.json ./
+COPY package-lock.json* ./
 
 # Clean npm cache and install dependencies
-RUN npm cache clean --force && npm install --frozen-lockfile
+RUN npm cache clean --force
+RUN npm install --omit=dev --no-package-lock
 
 # Copy source code
 COPY . .
 
 # Build the application
 RUN npm run build
-
-# Remove dev dependencies
-RUN npm prune --production
 
 # Create non-root user
 RUN addgroup --system --gid 1001 nodejs
