@@ -7,7 +7,7 @@ interface PlayerCardProps {
   onClick?: () => void
 }
 
-export default function PlayerCard({ player, onClick }: PlayerCardProps) {
+export function PlayerCard({ player, onClick }: PlayerCardProps) {
   const getPositionColor = (position: string) => {
     const pos = position?.toLowerCase()
     switch (pos) {
@@ -98,3 +98,5 @@ export default function PlayerCard({ player, onClick }: PlayerCardProps) {
     </div>
   )
 }
+
+export default PlayerCard

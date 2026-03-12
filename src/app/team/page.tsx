@@ -46,7 +46,7 @@ export default function TeamPage() {
         <select
           value={selectedTeam?.id || ''}
           onChange={(e) => {
-            const team = teams.find(t => t.id === e.target.value)
+            const team = teams.find(t => t.id.toString() === e.target.value)
             setSelectedTeam(team || null)
           }}
           className="block w-full md:w-64 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
@@ -66,14 +66,11 @@ export default function TeamPage() {
             <h2 className="text-2xl font-bold">{selectedTeam.name}</h2>
             <div className="flex items-center space-x-4 mt-2">
               <span className="text-lg font-semibold text-blue-600">
-                Total Points: {selectedTeam.totalPoints}
-              </span>
-              <span className="text-sm text-gray-500">
-                Budget: ${selectedTeam.budget?.toLocaleString() || 0}
+                Total Points: {selectedTeam.points || 0}
               </span>
             </div>
           </div>
-          <TeamRoster teamId={selectedTeam.id} />
+          <TeamRoster teamId={selectedTeam.id.toString()} />
         </div>
       )}
 

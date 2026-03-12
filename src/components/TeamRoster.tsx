@@ -4,10 +4,11 @@ import { Player } from '@/types'
 import PlayerCard from './PlayerCard'
 
 interface TeamRosterProps {
-  players: Player[]
+  players?: Player[]
+  teamId?: string
 }
 
-export default function TeamRoster({ players }: TeamRosterProps) {
+export function TeamRoster({ players = [], teamId }: TeamRosterProps) {
   if (players.length === 0) {
     return (
       <div className="p-8 text-center">
@@ -84,3 +85,5 @@ export default function TeamRoster({ players }: TeamRosterProps) {
     </div>
   )
 }
+
+export default TeamRoster
