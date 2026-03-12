@@ -1,212 +1,86 @@
 'use client'
-import { useState, useEffect } from 'react'
+
 import { Player } from '@/types'
-import { PlayerCard } from './PlayerCard'
+import PlayerCard from './PlayerCard'
 
 interface TeamRosterProps {
-  teamId: string
+  players: Player[]
 }
 
-export function TeamRoster({ teamId }: TeamRosterProps) {
-  const [rosterPlayers, setRosterPlayers] = useState<Player[]>([])
-  const [loading, setLoading] = useState(true)
-  const [activeTab, setActiveTab] = useState<'starters' | 'bench'>('starters')
-
-  useEffect(() => {
-    if (teamId) {
-      fetchRoster()
-    }
-  }, [teamId])
-
-  const fetchRoster = async () => {
-    try {
-      setLoading(true)
-      // First get team data to get roster player IDs
-      const teamResponse = await fetch(`/api/teams?teamId=${teamId}`)
-      const teams = await teamResponse.json()
-      const team = teams.find((t: any) => t.id === teamId)
-      
-      if (!team || !team.roster) {
-        setRosterPlayers([])
-        return
-      }
-
-      // Then get all players and filter by roster IDs
-      const playersResponse = await fetch('/api/players')
-      const allPlayers = await playersResponse.json()
-      const roster = allPlayers.filter((p: Player) => team.roster.includes(p.id))
-      
-      setRosterPlayers(roster)
-    } catch (error) {
-      console.error('Error fetching roster:', error)
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const removeFromTeam = async (playerId: string) => {
-    try {
-      // In a real app, you would make an API call to remove the player
-      setRosterPlayers(prev => prev.filter(p => p.id !== playerId))
-    } catch (error) {
-      console.error('Error removing player:', error)
-    }
-  }
-
-  const getStartingLineup = () => {
-    const lineup: { [position: string]: Player[] } = {
-      QB: [],
-      RB: [],
-      WR: [],
-      TE: [],
-      K: [],
-      DEF: []
-    }
-
-    rosterPlayers.forEach(player => {
-      if (lineup[player.position]) {
-        lineup[player.position].push(player)
-      }
-    })
-
-    return lineup
-  }
-
-  const getBenchPlayers = () => {
-    const startingLineup = getStartingLineup()
-    const startersCount = {
-      QB: 1,
-      RB: 2,
-      WR: 3,
-      TE: 1,
-      K: 1,
-      DEF: 1
-    }
-
-    const benchPlayers: Player[] = []
-    
-    Object.entries(startingLineup).forEach(([position, players]) => {
-      const maxStarters = startersCount[position as keyof typeof startersCount] || 0
-      if (players.length > maxStarters) {
-        benchPlayers.push(...players.slice(maxStarters))
-      }
-    })
-
-    return benchPlayers
-  }
-
-  if (loading) {
-    return <div className="text-center py-4">Loading roster...</div>
-  }
-
-  if (rosterPlayers.length === 0) {
+export default function TeamRoster({ players }: TeamRosterProps) {
+  if (players.length === 0) {
     return (
-      <div className="text-center py-8">
-        <p className="text-gray-500 mb-4">No players in your roster yet.</p>
-        <button className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
-          Add Players
-        </button>
+      <div className="p-8 text-center">
+        <div className="text-gray-400 mb-4">
+          <svg className="mx-auto h-12 w-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" />
+          </svg>
+        </div>
+        <h3 className="text-lg font-medium text-gray-900 mb-2">No Players</h3>
+        <p className="text-gray-500">This team doesn't have any players yet. Start building your roster!</p>
       </div>
     )
   }
 
-  const startingLineup = getStartingLineup()
-  const benchPlayers = getBenchPlayers()
-  const totalPoints = rosterPlayers.reduce((sum, player) => sum + player.points, 0)
+  // Group players by position for better organization
+  const playersByPosition = players.reduce((acc, player) => {
+    const position = player.position || 'Unknown'
+    if (!acc[position]) acc[position] = []
+    acc[position].push(player)
+    return acc
+  }, {} as Record<string, Player[]>)
+
+  const positionOrder = ['QB', 'RB', 'WR', 'TE', 'K', 'DEF', 'PG', 'SG', 'SF', 'PF', 'C', 'LW', 'RW', 'D', 'G']
+  const sortedPositions = Object.keys(playersByPosition).sort((a, b) => {
+    const aIndex = positionOrder.indexOf(a)
+    const bIndex = positionOrder.indexOf(b)
+    if (aIndex === -1 && bIndex === -1) return a.localeCompare(b)
+    if (aIndex === -1) return 1
+    if (bIndex === -1) return -1
+    return aIndex - bIndex
+  })
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div className="flex space-x-1">
-          <button
-            onClick={() => setActiveTab('starters')}
-            className={`px-4 py-2 rounded-md font-medium ${
-              activeTab === 'starters'
-                ? 'bg-blue-600 text-white'
-                : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-            }`}
-          >
-            Starting Lineup ({Object.values(startingLineup).flat().length - benchPlayers.length})
-          </button>
-          <button
-            onClick={() => setActiveTab('bench')}
-            className={`px-4 py-2 rounded-md font-medium ${
-              activeTab === 'bench'
-                ? 'bg-blue-600 text-white'
-                : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-            }`}
-          >
-            Bench ({benchPlayers.length})
-          </button>
-        </div>
-        <div className="text-lg font-semibold text-blue-600">
-          Total Points: {totalPoints}
+    <div className="p-6">
+      <div className="mb-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 text-center">
+          <div className="bg-gray-50 rounded-lg p-4">
+            <div className="text-2xl font-bold text-gray-900">{players.length}</div>
+            <div className="text-sm text-gray-600">Total Players</div>
+          </div>
+          <div className="bg-blue-50 rounded-lg p-4">
+            <div className="text-2xl font-bold text-blue-600">
+              {players.reduce((sum, player) => sum + (player.points || 0), 0)}
+            </div>
+            <div className="text-sm text-gray-600">Total Points</div>
+          </div>
+          <div className="bg-green-50 rounded-lg p-4">
+            <div className="text-2xl font-bold text-green-600">
+              {players.length > 0 ? (players.reduce((sum, player) => sum + (player.points || 0), 0) / players.length).toFixed(1) : '0.0'}
+            </div>
+            <div className="text-sm text-gray-600">Avg Points</div>
+          </div>
+          <div className="bg-purple-50 rounded-lg p-4">
+            <div className="text-2xl font-bold text-purple-600">{Object.keys(playersByPosition).length}</div>
+            <div className="text-sm text-gray-600">Positions</div>
+          </div>
         </div>
       </div>
 
-      {activeTab === 'starters' && (
-        <div className="space-y-6">
-          {Object.entries(startingLineup).map(([position, players]) => {
-            const startersCount = {
-              QB: 1, RB: 2, WR: 3, TE: 1, K: 1, DEF: 1
-            }[position as keyof typeof startingLineup] || 0
-            
-            const starters = players.slice(0, startersCount)
-            
-            if (starters.length === 0 && startersCount > 0) {
-              return (
-                <div key={position} className="space-y-2">
-                  <h3 className="text-lg font-semibold text-gray-900">
-                    {position} ({startersCount} needed)
-                  </h3>
-                  <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center">
-                    <p className="text-gray-500">No {position} assigned</p>
-                    <button className="mt-2 text-blue-600 hover:text-blue-800 font-medium">
-                      Add {position}
-                    </button>
-                  </div>
-                </div>
-              )
-            }
-
-            return (
-              <div key={position} className="space-y-2">
-                <h3 className="text-lg font-semibold text-gray-900">
-                  {position} ({starters.length}/{startersCount})
-                </h3>
-                <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {starters.map(player => (
-                    <PlayerCard
-                      key={player.id}
-                      player={player}
-                      showActions={false}
-                    />
-                  ))}
-                </div>
-              </div>
-            )
-          })}
-        </div>
-      )}
-
-      {activeTab === 'bench' && (
-        <div className="space-y-4">
-          <h3 className="text-lg font-semibold text-gray-900">Bench Players</h3>
-          {benchPlayers.length > 0 ? (
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {benchPlayers.map(player => (
-                <PlayerCard
-                  key={player.id}
-                  player={player}
-                  showActions={false}
-                />
+      <div className="space-y-6">
+        {sortedPositions.map((position) => (
+          <div key={position}>
+            <h3 className="text-lg font-semibold text-gray-900 mb-3 border-b border-gray-200 pb-2">
+              {position} ({playersByPosition[position].length})
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {playersByPosition[position].map((player) => (
+                <PlayerCard key={player.id} player={player} />
               ))}
             </div>
-          ) : (
-            <p className="text-gray-500 text-center py-8">No bench players</p>
-          )}
-        </div>
-      )}
+          </div>
+        ))}
+      </div>
     </div>
   )
 }

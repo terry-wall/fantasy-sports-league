@@ -1,13 +1,13 @@
 import './globals.css'
-import type { Metadata } from 'next'
 import { Inter } from 'next/font/google'
-import Link from 'next/link'
+import { AuthProvider } from './providers'
+import Header from '@/components/Header'
 
 const inter = Inter({ subsets: ['latin'] })
 
-export const metadata: Metadata = {
+export const metadata = {
   title: 'Fantasy Sports League',
-  description: 'Fantasy sports league application with live data updates and team management',
+  description: 'Multi-sport fantasy league platform with real-time stats',
 }
 
 export default function RootLayout({
@@ -18,30 +18,14 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={inter.className}>
-        <nav className="bg-blue-600 text-white p-4">
-          <div className="container mx-auto flex justify-between items-center">
-            <Link href="/" className="text-xl font-bold">
-              Fantasy Sports League
-            </Link>
-            <div className="space-x-4">
-              <Link href="/" className="hover:text-blue-200">
-                Home
-              </Link>
-              <Link href="/league" className="hover:text-blue-200">
-                League
-              </Link>
-              <Link href="/team" className="hover:text-blue-200">
-                My Team
-              </Link>
-              <Link href="/players" className="hover:text-blue-200">
-                Players
-              </Link>
-            </div>
+        <AuthProvider>
+          <div className="min-h-screen bg-gray-50">
+            <Header />
+            <main className="container mx-auto px-4 py-8">
+              {children}
+            </main>
           </div>
-        </nav>
-        <main className="min-h-screen bg-gray-50">
-          {children}
-        </main>
+        </AuthProvider>
       </body>
     </html>
   )

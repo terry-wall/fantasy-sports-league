@@ -1,44 +1,78 @@
-import Link from 'next/link'
-import { LiveScores } from '@/components/LiveScores'
-import { LeagueStandings } from '@/components/LeagueStandings'
+'use client'
+
+import { useSession } from 'next-auth/react'
+import { useRouter } from 'next/navigation'
+import { useEffect, useState } from 'react'
+import LeagueCard from '@/components/LeagueCard'
+import { League } from '@/types'
 
 export default function Home() {
+  const { data: session, status } = useSession()
+  const router = useRouter()
+  const [leagues, setLeagues] = useState<League[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    if (status === 'loading') return
+    if (!session) {
+      router.push('/auth/signin')
+      return
+    }
+    
+    fetchLeagues()
+  }, [session, status, router])
+
+  const fetchLeagues = async () => {
+    try {
+      const response = await fetch('/api/leagues')
+      const data = await response.json()
+      setLeagues(data)
+    } catch (error) {
+      console.error('Error fetching leagues:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  if (status === 'loading' || loading) {
+    return (
+      <div className="flex justify-center items-center min-h-[400px]">
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-500"></div>
+      </div>
+    )
+  }
+
+  if (!session) {
+    return null
+  }
+
   return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="text-center mb-8">
+    <div className="space-y-8">
+      <div className="text-center">
         <h1 className="text-4xl font-bold text-gray-900 mb-4">
           Welcome to Fantasy Sports League
         </h1>
         <p className="text-xl text-gray-600 mb-8">
-          Manage your team, track live scores, and compete with friends!
+          Manage your teams across Football, Basketball, Baseball, and Hockey
         </p>
-        <div className="flex justify-center space-x-4">
-          <Link
-            href="/team"
-            className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
-          >
-            Manage Team
-          </Link>
-          <Link
-            href="/players"
-            className="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded"
-          >
-            Browse Players
-          </Link>
-        </div>
       </div>
 
-      <div className="grid md:grid-cols-2 gap-8">
-        <div className="bg-white rounded-lg shadow-md p-6">
-          <h2 className="text-2xl font-bold mb-4">Live Scores</h2>
-          <LiveScores />
-        </div>
-        
-        <div className="bg-white rounded-lg shadow-md p-6">
-          <h2 className="text-2xl font-bold mb-4">League Standings</h2>
-          <LeagueStandings />
-        </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {leagues.map((league) => (
+          <LeagueCard key={league.id} league={league} />
+        ))}
       </div>
+
+      {leagues.length === 0 && (
+        <div className="text-center py-12">
+          <h3 className="text-lg font-semibold text-gray-900 mb-2">
+            No leagues found
+          </h3>
+          <p className="text-gray-600">
+            Create or join a league to get started!
+          </p>
+        </div>
+      )}
     </div>
   )
 }

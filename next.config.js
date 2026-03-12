@@ -3,9 +3,8 @@ const nextConfig = {
   experimental: {
     appDir: true,
   },
-  env: {
-    SPORTS_API_KEY: process.env.SPORTS_API_KEY,
-    DATABASE_URL: process.env.DATABASE_URL,
+  images: {
+    domains: ['images.unsplash.com', 'via.placeholder.com'],
   },
 }
 
