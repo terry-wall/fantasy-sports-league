@@ -1,21 +1,19 @@
-FROM node:20-slim
+FROM node:20-alpine
 
-ENV DEBIAN_FRONTEND=noninteractive
+# Set environment variables
+ENV NODE_ENV=production
+ENV NEXT_TELEMETRY_DISABLED=1
 
 # Install system dependencies
-RUN apt-get update && apt-get install -y \
-    python3 \
-    make \
-    g++ \
-    && rm -rf /var/lib/apt/lists/*
+RUN apk add --no-cache libc6-compat python3 make g++
 
 WORKDIR /app
 
 # Copy package files
-COPY package*.json ./
+COPY package.json package-lock.json* ./
 
-# Install dependencies
-RUN npm install
+# Clean npm cache and install dependencies
+RUN npm cache clean --force && npm install --frozen-lockfile
 
 # Copy source code
 COPY . .
@@ -23,8 +21,22 @@ COPY . .
 # Build the application
 RUN npm run build
 
+# Remove dev dependencies
+RUN npm prune --production
+
+# Create non-root user
+RUN addgroup --system --gid 1001 nodejs
+RUN adduser --system --uid 1001 nextjs
+
+# Set ownership
+RUN chown -R nextjs:nodejs /app
+USER nextjs
+
 # Expose port
 EXPOSE 3000
+
+ENV PORT=3000
+ENV HOSTNAME="0.0.0.0"
 
 # Start the application
 CMD ["npm", "run", "start"]
