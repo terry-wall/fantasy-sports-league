@@ -10,7 +10,7 @@ RUN apk add --no-cache libc6-compat python3 make g++
 WORKDIR /app
 
 # Copy package files
-COPY package*.json ./
+COPY package.json ./
 
 # Clean npm cache and install dependencies
 RUN npm cache clean --force
