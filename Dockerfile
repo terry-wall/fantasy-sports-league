@@ -12,12 +12,13 @@ WORKDIR /app
 # Copy package files
 COPY package.json ./
 
-# Clean npm cache and remove any existing lockfile
+# Clean npm cache and remove any existing lockfiles
 RUN rm -f package-lock.json yarn.lock pnpm-lock.yaml
 RUN npm cache clean --force
 
-# Install dependencies with explicit flags to avoid issues
-RUN npm install --no-package-lock --no-optional --omit=dev
+# Set npm registry and install with verbose logging
+RUN npm config set registry https://registry.npmjs.org/
+RUN npm install --verbose --legacy-peer-deps
 
 # Copy source code
 COPY . .
