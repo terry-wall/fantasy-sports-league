@@ -4,17 +4,17 @@ FROM node:20-alpine
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
 
-# Install system dependencies and upgrade npm
+# Install system dependencies
 RUN apk add --no-cache libc6-compat curl
-RUN npm install -g npm@latest
 
 WORKDIR /app
 
 # Copy package files
 COPY package.json ./
 
-# Install dependencies with verbose logging
-RUN npm install --production=false --verbose
+# Clean npm cache and install dependencies with specific flags to avoid issues
+RUN npm cache clean --force
+RUN npm install --no-package-lock --legacy-peer-deps
 
 # Copy source code
 COPY . .
