@@ -9,12 +9,13 @@ RUN apk add --no-cache libc6-compat curl
 
 WORKDIR /app
 
-# Copy package files
+# Copy package.json and install dependencies
 COPY package.json ./
 
-# Clean npm cache and install dependencies with specific flags to avoid issues
+# Clear npm cache and install with clean state
 RUN npm cache clean --force
-RUN npm install --no-package-lock --legacy-peer-deps
+RUN rm -rf node_modules package-lock.json npm-shrinkwrap.json 2>/dev/null || true
+RUN npm install --production=false
 
 # Copy source code
 COPY . .
