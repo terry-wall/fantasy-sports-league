@@ -1,6 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
 import { query } from '@/lib/database'
 
 // Fallback data when database is not available
@@ -53,11 +51,6 @@ const fallbackLeagues = [
 
 export async function GET(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions)
-    if (!session) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-
     // Try to fetch from database first
     if (process.env.DATABASE_URL) {
       try {
@@ -85,11 +78,6 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions)
-    if (!session) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-
     const { name, sport, max_teams, description } = await request.json()
 
     // Check if database is available
@@ -100,9 +88,9 @@ export async function POST(request: NextRequest) {
     try {
       const result = await query(`
         INSERT INTO leagues (name, sport, max_teams, description, created_by)
-        VALUES ($1, $2, $3, $4, $5)
+        VALUES ($1, $2, $3, $4, 'user@example.com')
         RETURNING *
-      `, [name, sport, max_teams, description, session.user?.email])
+      `, [name, sport, max_teams, description])
 
       return NextResponse.json(result.rows[0], { status: 201 })
     } catch (dbError) {

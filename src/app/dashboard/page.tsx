@@ -1,6 +1,5 @@
 'use client'
 
-import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import LeagueCard from '@/components/LeagueCard'
@@ -8,7 +7,6 @@ import StatsTable from '@/components/StatsTable'
 import { League, Team, Player } from '@/types'
 
 export default function Dashboard() {
-  const { data: session, status } = useSession()
   const router = useRouter()
   const [leagues, setLeagues] = useState<League[]>([])
   const [teams, setTeams] = useState<Team[]>([])
@@ -16,14 +14,8 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    if (status === 'loading') return
-    if (!session) {
-      router.push('/auth/signin')
-      return
-    }
-    
     fetchDashboardData()
-  }, [session, status, router])
+  }, [])
 
   const fetchDashboardData = async () => {
     try {
@@ -49,7 +41,7 @@ export default function Dashboard() {
     }
   }
 
-  if (status === 'loading' || loading) {
+  if (loading) {
     return (
       <div className="flex justify-center items-center min-h-[400px]">
         <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-500"></div>
@@ -57,18 +49,14 @@ export default function Dashboard() {
     )
   }
 
-  if (!session) {
-    return null
-  }
-
   return (
     <div className="space-y-8">
       <div className="text-center">
         <h1 className="text-3xl font-bold text-gray-900 mb-4">
-          Welcome back, {session.user?.name}!
+          Fantasy Sports Dashboard
         </h1>
         <p className="text-lg text-gray-600">
-          Here's your fantasy sports dashboard
+          Your fantasy sports overview
         </p>
       </div>
 
@@ -76,7 +64,7 @@ export default function Dashboard() {
         <div className="lg:col-span-2 space-y-6">
           <div>
             <h2 className="text-2xl font-semibold text-gray-900 mb-4">
-              Your Leagues
+              Available Leagues
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {leagues.slice(0, 4).map((league) => (
@@ -92,7 +80,7 @@ export default function Dashboard() {
 
           <div>
             <h2 className="text-2xl font-semibold text-gray-900 mb-4">
-              Your Teams
+              Recent Teams
             </h2>
             <div className="bg-white rounded-lg shadow overflow-hidden">
               {teams.length > 0 ? (

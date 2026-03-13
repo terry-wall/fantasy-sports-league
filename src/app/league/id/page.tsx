@@ -1,26 +1,18 @@
 'use client'
 
-import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import { League, Team } from '@/types'
 
 export default function LeaguePage({ params }: { params: { id: string } }) {
-  const { data: session, status } = useSession()
   const router = useRouter()
   const [league, setLeague] = useState<League | null>(null)
   const [teams, setTeams] = useState<Team[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    if (status === 'loading') return
-    if (!session) {
-      router.push('/auth/signin')
-      return
-    }
-    
     fetchLeagueData()
-  }, [session, status, router, params.id])
+  }, [params.id])
 
   const fetchLeagueData = async () => {
     try {
@@ -43,7 +35,7 @@ export default function LeaguePage({ params }: { params: { id: string } }) {
     }
   }
 
-  if (status === 'loading' || loading) {
+  if (loading) {
     return (
       <div className="flex justify-center items-center min-h-[400px]">
         <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-500"></div>
@@ -51,7 +43,7 @@ export default function LeaguePage({ params }: { params: { id: string } }) {
     )
   }
 
-  if (!session || !league) {
+  if (!league) {
     return (
       <div className="text-center py-12">
         <h1 className="text-2xl font-bold text-gray-900">League not found</h1>

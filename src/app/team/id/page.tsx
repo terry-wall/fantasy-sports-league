@@ -1,27 +1,19 @@
 'use client'
 
-import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import TeamRoster from '@/components/TeamRoster'
 import { Team, Player } from '@/types'
 
 export default function TeamPage({ params }: { params: { id: string } }) {
-  const { data: session, status } = useSession()
   const router = useRouter()
   const [team, setTeam] = useState<Team | null>(null)
   const [roster, setRoster] = useState<Player[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    if (status === 'loading') return
-    if (!session) {
-      router.push('/auth/signin')
-      return
-    }
-    
     fetchTeamData()
-  }, [session, status, router, params.id])
+  }, [params.id])
 
   const fetchTeamData = async () => {
     try {
@@ -46,7 +38,7 @@ export default function TeamPage({ params }: { params: { id: string } }) {
     }
   }
 
-  if (status === 'loading' || loading) {
+  if (loading) {
     return (
       <div className="flex justify-center items-center min-h-[400px]">
         <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-500"></div>
@@ -54,7 +46,7 @@ export default function TeamPage({ params }: { params: { id: string } }) {
     )
   }
 
-  if (!session || !team) {
+  if (!team) {
     return (
       <div className="text-center py-12">
         <h1 className="text-2xl font-bold text-gray-900">Team not found</h1>

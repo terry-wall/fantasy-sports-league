@@ -1,15 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
 import { query } from '@/lib/database'
 
 export async function GET(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions)
-    if (!session) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-
     const { searchParams } = new URL(request.url)
     const leagueId = searchParams.get('league_id')
     const userId = searchParams.get('user_id')
@@ -33,9 +26,6 @@ export async function GET(request: NextRequest) {
     if (userId) {
       conditions.push(`t.owner_email = $${params.length + 1}`)
       params.push(userId)
-    } else {
-      conditions.push(`t.owner_email = $${params.length + 1}`)
-      params.push(session.user?.email)
     }
 
     if (conditions.length > 0) {
@@ -55,11 +45,6 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions)
-    if (!session) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-
     const { name, league_id } = await request.json()
 
     // Check if league exists and has space
@@ -82,9 +67,9 @@ export async function POST(request: NextRequest) {
 
     const result = await query(`
       INSERT INTO teams (name, league_id, owner_email, owner_name)
-      VALUES ($1, $2, $3, $4)
+      VALUES ($1, $2, 'user@example.com', 'User')
       RETURNING *
-    `, [name, league_id, session.user?.email, session.user?.name])
+    `, [name, league_id])
 
     return NextResponse.json(result.rows[0], { status: 201 })
   } catch (error) {

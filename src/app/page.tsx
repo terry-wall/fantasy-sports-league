@@ -1,26 +1,16 @@
 'use client'
 
-import { useSession } from 'next-auth/react'
-import { useRouter } from 'next/navigation'
-import { useEffect, useState } from 'react'
+import { useState, useEffect } from 'react'
 import LeagueCard from '@/components/LeagueCard'
 import { League } from '@/types'
 
 export default function Home() {
-  const { data: session, status } = useSession()
-  const router = useRouter()
   const [leagues, setLeagues] = useState<League[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    if (status === 'loading') return
-    if (!session) {
-      router.push('/auth/signin')
-      return
-    }
-    
     fetchLeagues()
-  }, [session, status, router])
+  }, [])
 
   const fetchLeagues = async () => {
     try {
@@ -34,16 +24,12 @@ export default function Home() {
     }
   }
 
-  if (status === 'loading' || loading) {
+  if (loading) {
     return (
       <div className="flex justify-center items-center min-h-[400px]">
         <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-500"></div>
       </div>
     )
-  }
-
-  if (!session) {
-    return null
   }
 
   return (
