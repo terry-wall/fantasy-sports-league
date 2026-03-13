@@ -1,21 +1,42 @@
 import { Pool } from 'pg'
 
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-  ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
-})
+let pool: Pool | null = null
+
+function getPool() {
+  if (!pool) {
+    pool = new Pool({
+      connectionString: process.env.DATABASE_URL,
+      ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
+      // Add connection timeout and retry settings
+      connectionTimeoutMillis: 5000,
+      idleTimeoutMillis: 30000,
+      max: 20,
+    })
+  }
+  return pool
+}
 
 export async function query(text: string, params?: any[]) {
-  const client = await pool.connect()
   try {
-    return await client.query(text, params)
-  } finally {
-    client.release()
+    const client = await getPool().connect()
+    try {
+      return await client.query(text, params)
+    } finally {
+      client.release()
+    }
+  } catch (error) {
+    console.error('Database query error:', error)
+    throw error
   }
 }
 
 // Initialize database tables
 export async function initDatabase() {
+  if (!process.env.DATABASE_URL) {
+    console.warn('DATABASE_URL not provided, skipping database initialization')
+    return
+  }
+
   const tables = [
     `
       CREATE TABLE IF NOT EXISTS leagues (
@@ -158,7 +179,18 @@ async function seedSampleData() {
   }
 }
 
-// Initialize on import
-if (process.env.DATABASE_URL) {
-  initDatabase().catch(console.error)
+// Export a function to manually initialize the database
+export async function ensureDatabaseReady() {
+  if (!process.env.DATABASE_URL) {
+    console.warn('DATABASE_URL not provided, database features will be limited')
+    return false
+  }
+  
+  try {
+    await initDatabase()
+    return true
+  } catch (error) {
+    console.error('Database initialization failed:', error)
+    return false
+  }
 }
