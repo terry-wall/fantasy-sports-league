@@ -5,6 +5,46 @@ import CredentialsProvider from 'next-auth/providers/credentials'
 
 const providers = []
 
+// Always add demo credentials provider for testing
+providers.push(
+  CredentialsProvider({
+    id: 'credentials',
+    name: 'Demo Credentials',
+    credentials: {
+      email: {
+        label: 'Email',
+        type: 'email',
+        placeholder: 'demo@example.com'
+      },
+      password: {
+        label: 'Password',
+        type: 'password',
+        placeholder: 'demo123'
+      }
+    },
+    async authorize(credentials) {
+      console.log('Authorize called with:', credentials)
+      
+      // Demo login with hardcoded credentials
+      if (
+        credentials?.email === 'demo@example.com' &&
+        credentials?.password === 'demo123'
+      ) {
+        console.log('Demo login successful')
+        return {
+          id: 'demo-user-1',
+          email: 'demo@example.com',
+          name: 'Demo User',
+          image: 'https://via.placeholder.com/150?text=Demo'
+        }
+      }
+      
+      console.log('Demo login failed - invalid credentials')
+      return null
+    }
+  })
+)
+
 // Add Google provider only if credentials are available
 if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
   providers.push(
@@ -25,54 +65,43 @@ if (process.env.FACEBOOK_CLIENT_ID && process.env.FACEBOOK_CLIENT_SECRET) {
   )
 }
 
-// Always add demo credentials provider for testing
-providers.push(
-  CredentialsProvider({
-    id: 'demo',
-    name: 'Demo Login',
-    credentials: {
-      email: {
-        label: 'Email',
-        type: 'email',
-        placeholder: 'demo@example.com'
-      },
-      password: {
-        label: 'Password',
-        type: 'password',
-        placeholder: 'demo123'
-      }
-    },
-    async authorize(credentials) {
-      // Demo login with hardcoded credentials
-      if (
-        credentials?.email === 'demo@example.com' &&
-        credentials?.password === 'demo123'
-      ) {
-        return {
-          id: 'demo-user-1',
-          email: 'demo@example.com',
-          name: 'Demo User',
-          image: 'https://via.placeholder.com/150?text=Demo'
-        }
-      }
-      return null
-    }
-  })
-)
-
 export const authOptions: AuthOptions = {
   providers,
   callbacks: {
     async session({ session, token }) {
+      console.log('Session callback:', { session, token })
       return session
     },
     async jwt({ token, user }) {
+      console.log('JWT callback:', { token, user })
+      if (user) {
+        token.id = user.id
+      }
       return token
     },
+    async signIn({ user, account, profile }) {
+      console.log('SignIn callback:', { user, account, profile })
+      return true
+    },
+    async redirect({ url, baseUrl }) {
+      console.log('Redirect callback:', { url, baseUrl })
+      // Always redirect to home after successful login
+      if (url.startsWith('/')) return `${baseUrl}${url}`
+      if (new URL(url).origin === baseUrl) return url
+      return baseUrl
+    }
   },
   pages: {
     signIn: '/auth/signin',
   },
+  session: {
+    strategy: 'jwt',
+    maxAge: 30 * 24 * 60 * 60, // 30 days
+  },
+  jwt: {
+    maxAge: 30 * 24 * 60 * 60, // 30 days
+  },
   // Use a default secret if not provided
   secret: process.env.NEXTAUTH_SECRET || 'fallback-secret-for-development-only',
+  debug: process.env.NODE_ENV === 'development',
 }

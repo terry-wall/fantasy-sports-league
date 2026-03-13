@@ -27,17 +27,17 @@ export default function SignIn() {
     setError('')
 
     try {
-      const result = await signIn('demo', {
+      const result = await signIn('credentials', {
         email,
         password,
-        callbackUrl: '/',
         redirect: false
       })
 
       if (result?.error) {
         setError('Invalid credentials. Use demo@example.com / demo123')
-      } else {
+      } else if (result?.ok) {
         router.push('/')
+        router.refresh()
       }
     } catch (error) {
       setError('An error occurred during login')
@@ -73,7 +73,7 @@ export default function SignIn() {
             
             <form onSubmit={handleDemoLogin} className="space-y-4">
               <div>
-                <label htmlFor="email" className="sr-only">
+                <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
                   Email address
                 </label>
                 <input
@@ -83,12 +83,12 @@ export default function SignIn() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
-                  className="relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
+                  className="relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 bg-white rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
                   placeholder="Email address"
                 />
               </div>
               <div>
-                <label htmlFor="password" className="sr-only">
+                <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
                   Password
                 </label>
                 <input
@@ -98,13 +98,13 @@ export default function SignIn() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
-                  className="relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
+                  className="relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 bg-white rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
                   placeholder="Password"
                 />
               </div>
               
               {error && (
-                <div className="text-red-600 text-sm text-center">
+                <div className="text-red-600 text-sm text-center bg-red-50 border border-red-200 rounded-md p-3">
                   {error}
                 </div>
               )}
@@ -128,7 +128,7 @@ export default function SignIn() {
               </button>
             </form>
             
-            <div className="mt-3 text-xs text-blue-600">
+            <div className="mt-3 text-xs text-blue-600 bg-blue-100 border border-blue-200 rounded-md p-2">
               <strong>Demo Credentials:</strong><br />
               Email: demo@example.com<br />
               Password: demo123
