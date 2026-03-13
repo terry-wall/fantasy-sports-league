@@ -1,4 +1,4 @@
-import { AuthOptions } from 'next-auth'
+import { NextAuthOptions } from 'next-auth'
 import GoogleProvider from 'next-auth/providers/google'
 import FacebookProvider from 'next-auth/providers/facebook'
 import CredentialsProvider from 'next-auth/providers/credentials'
@@ -65,11 +65,17 @@ if (process.env.FACEBOOK_CLIENT_ID && process.env.FACEBOOK_CLIENT_SECRET) {
   )
 }
 
-export const authOptions: AuthOptions = {
+export const authOptions: NextAuthOptions = {
   providers,
   callbacks: {
     async session({ session, token }) {
       console.log('Session callback:', { session, token })
+      if (token?.id) {
+        session.user = {
+          ...session.user,
+          id: token.id as string
+        }
+      }
       return session
     },
     async jwt({ token, user }) {
@@ -93,15 +99,17 @@ export const authOptions: AuthOptions = {
   },
   pages: {
     signIn: '/auth/signin',
+    error: '/auth/error',
   },
   session: {
     strategy: 'jwt',
     maxAge: 30 * 24 * 60 * 60, // 30 days
+    updateAge: 24 * 60 * 60, // 24 hours
   },
   jwt: {
     maxAge: 30 * 24 * 60 * 60, // 30 days
   },
-  // Use a default secret if not provided
+  // Use environment secret or fallback for development
   secret: process.env.NEXTAUTH_SECRET || 'fallback-secret-for-development-only',
   debug: process.env.NODE_ENV === 'development',
 }

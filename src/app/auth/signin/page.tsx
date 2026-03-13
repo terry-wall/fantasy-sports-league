@@ -1,25 +1,27 @@
 'use client'
 
 import { signIn, getSession } from 'next-auth/react'
-import { useRouter } from 'next/navigation'
-import { useEffect, useState } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
+import { useEffect, useState, Suspense } from 'react'
 
-export default function SignIn() {
+function SignInForm() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const [email, setEmail] = useState('demo@example.com')
   const [password, setPassword] = useState('demo123')
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState('')
+  const callbackUrl = searchParams?.get('callbackUrl') || '/'
 
   useEffect(() => {
     const checkSession = async () => {
       const session = await getSession()
       if (session) {
-        router.push('/')
+        router.push(callbackUrl)
       }
     }
     checkSession()
-  }, [router])
+  }, [router, callbackUrl])
 
   const handleDemoLogin = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -30,18 +32,33 @@ export default function SignIn() {
       const result = await signIn('credentials', {
         email,
         password,
-        redirect: false
+        redirect: false,
+        callbackUrl
       })
+
+      console.log('SignIn result:', result)
 
       if (result?.error) {
         setError('Invalid credentials. Use demo@example.com / demo123')
       } else if (result?.ok) {
-        router.push('/')
-        router.refresh()
+        // Force refresh and redirect
+        window.location.href = callbackUrl
       }
     } catch (error) {
+      console.error('Login error:', error)
       setError('An error occurred during login')
     } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const handleOAuthSignIn = async (provider: string) => {
+    setIsLoading(true)
+    try {
+      await signIn(provider, { callbackUrl })
+    } catch (error) {
+      console.error(`${provider} sign in error:`, error)
+      setError(`Failed to sign in with ${provider}`)
       setIsLoading(false)
     }
   }
@@ -73,7 +90,7 @@ export default function SignIn() {
             
             <form onSubmit={handleDemoLogin} className="space-y-4">
               <div>
-                <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
+                <label htmlFor="email" className="form-label">
                   Email address
                 </label>
                 <input
@@ -83,12 +100,12 @@ export default function SignIn() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
-                  className="relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 bg-white rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
+                  className="form-input"
                   placeholder="Email address"
                 />
               </div>
               <div>
-                <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
+                <label htmlFor="password" className="form-label">
                   Password
                 </label>
                 <input
@@ -98,7 +115,7 @@ export default function SignIn() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
-                  className="relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 bg-white rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
+                  className="form-input"
                   placeholder="Password"
                 />
               </div>
@@ -112,10 +129,10 @@ export default function SignIn() {
               <button
                 type="submit"
                 disabled={isLoading}
-                className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                className="btn-primary w-full"
               >
                 {isLoading ? (
-                  <div className="flex items-center">
+                  <div className="flex items-center justify-center">
                     <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" fill="none" viewBox="0 0 24 24">
                       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                       <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
@@ -148,8 +165,9 @@ export default function SignIn() {
           {/* OAuth Buttons */}
           <div className="space-y-3">
             <button
-              onClick={() => signIn('google', { callbackUrl: '/' })}
-              className="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors"
+              onClick={() => handleOAuthSignIn('google')}
+              disabled={isLoading}
+              className="btn-secondary w-full bg-red-600 hover:bg-red-700 text-white border-red-600"
             >
               <svg className="w-5 h-5 mr-2" viewBox="0 0 24 24">
                 <path
@@ -173,8 +191,9 @@ export default function SignIn() {
             </button>
             
             <button
-              onClick={() => signIn('facebook', { callbackUrl: '/' })}
-              className="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
+              onClick={() => handleOAuthSignIn('facebook')}
+              disabled={isLoading}
+              className="btn-secondary w-full bg-blue-600 hover:bg-blue-700 text-white border-blue-600"
             >
               <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 24 24">
                 <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
@@ -185,5 +204,17 @@ export default function SignIn() {
         </div>
       </div>
     </div>
+  )
+}
+
+export default function SignIn() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-500"></div>
+      </div>
+    }>
+      <SignInForm />
+    </Suspense>
   )
 }
